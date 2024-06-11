@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Area Measurement</title>
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=drawing"></script>
+    <script src="https://cdn.jsdelivr.net/npm/geolib@3.3.4/lib/index.min.js"></script>
+    <script>
+      let map;
+      let drawingManager;
+      let selectedShape;
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: { lat: -34.397, lng: 150.644 },
+          zoom: 8,
+        });
+
+        drawingManager = new google.maps.drawing.DrawingManager({
+          drawingMode: google.maps.drawing.OverlayType.POLYGON,
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER,
+            drawingModes: ['polygon'],
+          },
+          polygonOptions: {
+            editable: true,
+          },
+        });
+
+        drawingManager.setMap(map);
+
+        google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {
+          if (event.type === google.maps.drawing.OverlayType.POLYGON) {
+            if (selectedShape) {
+              selectedShape.setMap(null);
+            }
+            selectedShape = event.overlay;
+            const coords = getPolygonCoords(selectedShape);
+            console.log(coords);
+            const squareMeters = geolib.getAreaOfPolygon(coords);
+            // google.script.run.withSuccessHandler(displayResult).calculateArea(coords);
+            displayResult(squareMeters);
+          }
+        });
+      }
+
+      function getPolygonCoords(polygon) {
+        const path = polygon.getPath();
+        const coordinates = [];
+        for (let i = 0; i < path.getLength(); i++) {
+          const xy = path.getAt(i);
+          coordinates.push([xy.lng(), xy.lat()]);
+        }
+        coordinates.push(coordinates[0]); // Close the polygon
+        return coordinates;
+      }
+
+      function displayResult(result) {
+        document.getElementById('result').innerText = 'Area: ' + result.toFixed(2) + ' square meters';
+      }
+
+      google.maps.event.addDomListener(window, 'load', initMap);
+    </script>
+  </head>
+  <body>
+    <h1>Area Measurement</h1>
+    <div id="map"></div>
+    <p id="result"></p>
+  </body>
+</html>
